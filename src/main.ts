@@ -1,4 +1,5 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { DatabaseView, DATABASE_VIEW_TYPE } from './database/database-view';
 
 interface TddLabSettings {
 	mySetting: string;
@@ -14,55 +15,24 @@ export default class TddLab extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		const ribbonIconEl = this.addRibbonIcon('dice', 'TDD Lab', (evt: MouseEvent) => {
-			new Notice('TDD Lab activated');
-		});
-		ribbonIconEl.addClass('tdd-lab-ribbon-class');
+		// 注册数据库视图
+		this.registerView(
+			DATABASE_VIEW_TYPE,
+			(leaf) => new DatabaseView(leaf)
+		);
 
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('TDD Lab');
-
-		this.addCommand({
-			id: 'open-tdd-modal-simple',
-			name: 'Open TDD modal (simple)',
-			callback: () => {
-				new TddModal(this.app).open();
-			}
+		// 添加打开数据库视图的功能按钮
+		this.addRibbonIcon('database', 'Open TDD Lab Database', (evt: MouseEvent) => {
+			this.activateView();
 		});
 
-		this.addCommand({
-			id: 'tdd-editor-command',
-			name: 'TDD editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('TDD Editor Command');
-			}
-		});
-
-		this.addCommand({
-			id: 'open-tdd-modal-complex',
-			name: 'Open TDD modal (complex)',
-			checkCallback: (checking: boolean) => {
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					if (!checking) {
-						new TddModal(this.app).open();
-					}
-					return true;
-				}
-			}
-		});
-
+		// 添加设置选项卡
 		this.addSettingTab(new TddSettingTab(this.app, this));
-
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
 	onunload() {
+		// 清理视图
+		this.app.workspace.detachLeavesOfType(DATABASE_VIEW_TYPE);
 	}
 
 	async loadSettings() {
@@ -72,21 +42,20 @@ export default class TddLab extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-}
 
-class TddModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
+	async activateView() {
+		// 如果视图已经打开，则激活它
+		const existing = this.app.workspace.getLeavesOfType(DATABASE_VIEW_TYPE);
+		if (existing.length) {
+			this.app.workspace.revealLeaf(existing[0]);
+			return;
+		}
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('TDD Lab Modal');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+		// 否则创建新视图
+		await this.app.workspace.getLeaf(false).setViewState({
+			type: DATABASE_VIEW_TYPE,
+			active: true,
+		});
 	}
 }
 
