@@ -82,6 +82,15 @@ export class Debug extends Component<DebugProps, DebugState> {
         });
     }
 
+    async openDataFolder() {
+        try {
+            await this.props.dataManager.openDataFolderInExplorer();
+        } catch (error) {
+            console.error("Error opening data folder:", error);
+            new Notice("无法打开数据文件夹");
+        }
+    }
+
     renderItemList() {
         const { items, filter } = this.state;
         
@@ -178,7 +187,19 @@ export class Debug extends Component<DebugProps, DebugState> {
         
         return html`
             <div class="debug-info">
-                <h3>数据库信息</h3>
+                <div class="debug-info-header">
+                    <h3>数据库信息</h3>
+                    <button 
+                        class="open-folder-btn" 
+                        title="在文件浏览器中打开数据目录"
+                        onClick=${() => this.openDataFolder()}
+                    >
+                        <svg viewBox="0 0 100 100" width="16" height="16" class="folder-icon">
+                            <path d="M 10,20 H 40 L 50,30 H 90 V 80 H 10 Z" fill="currentColor"/>
+                        </svg>
+                        打开目录
+                    </button>
+                </div>
                 <div class="info-grid">
                     <div class="info-item">
                         <span class="info-label">数据项总数:</span>

@@ -304,7 +304,7 @@ export class DataManager {
                 const content = await this.vault.read(file);
                 JSON.parse(content);
             } catch (err) {
-                issues.push(`Invalid JSON in file: ${entry.filePath} for ID: ${entry.id}`);
+                issues.push(`Invalid JSON in file: ${entry.filePath} for ID ${entry.id}`);
             }
         }
         
@@ -312,5 +312,22 @@ export class DataManager {
             valid: issues.length === 0,
             issues
         };
+    }
+
+    // 在系统文件浏览器中打开数据目录
+    async openDataFolderInExplorer(): Promise<void> {
+        try {
+            // 检查文件夹是否存在
+            const folderExists = await this.vault.adapter.exists(this.settings.dataFolder);
+            if (!folderExists) {
+                await this.vault.createFolder(this.settings.dataFolder);
+            }
+            
+            // 在系统默认应用中打开
+            await (this.app as any).openWithDefaultApp(this.settings.dataFolder);
+        } catch (error) {
+            console.error("Error opening data folder in explorer:", error);
+            throw error;
+        }
     }
 }

@@ -237,3 +237,35 @@ If your plugin does not need CSS, delete this file.
     text-align: center;
     color: var(--text-muted);
 }
+
+/* 调试信息区域样式更新 */
+.debug-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.debug-info-header h3 {
+    margin: 0;
+}
+
+.open-folder-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.85em;
+    padding: 4px 8px;
+    background-color: var(--interactive-normal);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.open-folder-btn:hover {
+    background-color: var(--interactive-hover);
+}
+
+.folder-icon {
+    color: var(--text-accent);
+}
