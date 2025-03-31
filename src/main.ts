@@ -62,6 +62,11 @@ export default class TddLab extends Plugin {
 	onunload() {
 		// 清理视图
 		this.app.workspace.detachLeavesOfType(DATABASE_VIEW_TYPE);
+		
+		// 清理数据管理器缓存
+		if (this.dataManager) {
+			this.dataManager.clearCache();
+		}
 	}
 
 	async loadSettings() {

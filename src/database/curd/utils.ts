@@ -14,9 +14,9 @@ export interface IndexEntry {
 export interface DatabaseSettings {
     dataFolder: string;
     indexFile: string;
+    schemaFile?: string;
 }
 
-// 添加用于调试的信息接口
 export interface DebugInfo {
     totalItems: number;
     dataFolder: string;
@@ -33,9 +33,30 @@ export interface DebugInfo {
     };
 }
 
+// Schema相关类型定义
+export type FieldType = 'string' | 'number' | 'boolean' | 'date' | 'array' | 'object' | 'text';
+
+export interface SchemaField {
+    name: string;
+    type: FieldType;
+    required: boolean;
+    defaultValue?: any;
+    description?: string;
+    system?: boolean; // 系统字段不可删除
+}
+
+export interface DataSchema {
+    name: string;
+    description: string;
+    fields: SchemaField[];
+    indexFields: string[]; // 用于索引的字段
+    version: number;
+}
+
 export const DEFAULT_DB_SETTINGS: DatabaseSettings = {
     dataFolder: 'tdd-lab-data',
-    indexFile: 'data-index.json'
+    indexFile: 'data-index.json',
+    schemaFile: 'data-schema.json'
 }
 
 export class DataManager {
@@ -43,10 +64,23 @@ export class DataManager {
     vault: Vault;
     settings: DatabaseSettings;
 
+    private cacheCleanupInterval: number;
+
     constructor(app: App, settings?: Partial<DatabaseSettings>) {
         this.app = app;
         this.vault = app.vault;
         this.settings = { ...DEFAULT_DB_SETTINGS, ...settings };
+        
+        // 每5分钟清理一次缓存
+        this.cacheCleanupInterval = window.setInterval(() => {
+            this.clearCache();
+        }, 5 * 60 * 1000);
+    }
+
+    // 清理缓存
+    clearCache(): void {
+        this.queryCache.clear();
+        console.log('Query cache cleared');
     }
 
     // 确保数据目录存在
@@ -75,6 +109,12 @@ export class DataManager {
         return `${this.settings.dataFolder}/${id}.json`;
     }
 
+    // 获取Schema文件路径
+    getSchemaFilePath(): string | null {
+        if (!this.settings.schemaFile) return null;
+        return `${this.settings.dataFolder}/${this.settings.schemaFile}`;
+    }
+
     // 加载索引
     async loadIndex(): Promise<IndexEntry[]> {
         const indexPath = this.getIndexFilePath();
@@ -94,8 +134,112 @@ export class DataManager {
         await this.vault.adapter.write(indexPath, JSON.stringify(index, null, 2));
     }
 
+    // Schema相关方法
+    async loadSchema(): Promise<DataSchema | null> {
+        const schemaPath = this.getSchemaFilePath();
+        if (!schemaPath) return null;
+        
+        try {
+            const content = await this.vault.adapter.read(schemaPath);
+            return JSON.parse(content);
+        } catch (err) {
+            console.error("Error loading schema:", err);
+            return null;
+        }
+    }
+
+    async saveSchema(schema: DataSchema): Promise<void> {
+        const schemaPath = this.getSchemaFilePath();
+        if (!schemaPath) return;
+        
+        await this.vault.adapter.write(schemaPath, JSON.stringify(schema, null, 2));
+    }
+
+    async applySchema(schema: DataSchema): Promise<void> {
+        // 1. 保存schema
+        await this.saveSchema(schema);
+        
+        // 2. 验证并更新现有数据
+        const index = await this.loadIndex();
+        for (const entry of index) {
+            try {
+                const content = await this.vault.adapter.read(entry.filePath);
+                const item = JSON.parse(content);
+                
+                // 验证数据是否符合新schema
+                const validation = await this.validateData(item, schema);
+                if (!validation.valid) {
+                    console.warn(`Data item ${entry.id} does not match new schema: ${validation.errors.join(', ')}`);
+                }
+                
+                // 更新数据文件
+                await this.vault.adapter.write(entry.filePath, JSON.stringify(item, null, 2));
+            } catch (err) {
+                console.error(`Error applying schema to data item ${entry.id}:`, err);
+            }
+        }
+    }
+
+    async validateData(data: DataItem, schema?: DataSchema): Promise<{valid: boolean, errors: string[]}> {
+        const errors: string[] = [];
+        const currentSchema = schema || await this.loadSchema();
+        
+        if (!currentSchema) return {valid: true, errors};
+        
+        // 验证必填字段
+        currentSchema.fields.forEach(field => {
+            if (field.required && data[field.name] === undefined) {
+                errors.push(`Missing required field: ${field.name}`);
+            }
+        });
+
+        // 验证字段类型
+        currentSchema.fields.forEach(field => {
+            if (data[field.name] !== undefined) {
+                const value = data[field.name];
+                let valid = true;
+                
+                switch(field.type) {
+                    case 'string':
+                        valid = typeof value === 'string';
+                        break;
+                    case 'number':
+                        valid = typeof value === 'number';
+                        break;
+                    case 'boolean':
+                        valid = typeof value === 'boolean';
+                        break;
+                    case 'date':
+                        valid = !isNaN(new Date(value).getTime());
+                        break;
+                    case 'array':
+                        valid = Array.isArray(value);
+                        break;
+                    case 'object':
+                        valid = typeof value === 'object' && !Array.isArray(value);
+                        break;
+                }
+                
+                if (!valid) {
+                    errors.push(`Invalid type for field ${field.name}: expected ${field.type}, got ${typeof value}`);
+                }
+            }
+        });
+        
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    }
+
     // 创建数据 (Create)
     async createData(data: DataItem): Promise<DataItem> {
+        // 验证数据
+        const validation = await this.validateData(data);
+        if (!validation.valid) {
+            throw new Error(`Data validation failed: ${validation.errors.join(', ')}`);
+        }
+        
         // 确保有ID
         if (!data.id) {
             data.id = this.generateId();
@@ -157,6 +301,12 @@ export class DataManager {
         // 合并数据
         const updatedData = { ...existingData, ...newData, id };
         
+        // 验证数据
+        const validation = await this.validateData(updatedData);
+        if (!validation.valid) {
+            throw new Error(`Data validation failed: ${validation.errors.join(', ')}`);
+        }
+        
         // 保存更新后的数据
         const filePath = this.getDataFilePath(id);
         await this.vault.adapter.write(filePath, JSON.stringify(updatedData, null, 2));
@@ -185,13 +335,44 @@ export class DataManager {
         return true;
     }
 
-    // 搜索数据
-    async searchData(query: string): Promise<DataItem[]> {
-        const allData = await this.readAllData();
-        return allData.filter(item => {
-            // 简单搜索 - 在实际应用中可以根据需要改进
-            return JSON.stringify(item).toLowerCase().includes(query.toLowerCase());
-        });
+    private queryCache = new Map<string, DataItem[]>();
+    
+    // 增强搜索功能
+    async searchData(query: string, field?: string): Promise<DataItem[]> {
+        const cacheKey = `${field || '*'}:${query}`;
+        
+        // 检查缓存
+        if (this.queryCache.has(cacheKey)) {
+            return this.queryCache.get(cacheKey)!;
+        }
+        
+        const index = await this.loadIndex();
+        const results: DataItem[] = [];
+        
+        // 按需加载数据文件
+        for (const entry of index) {
+            try {
+                const content = await this.vault.adapter.read(entry.filePath);
+                const item = JSON.parse(content);
+                
+                // 字段级查询
+                if (field) {
+                    if (item[field] && String(item[field]).toLowerCase().includes(query.toLowerCase())) {
+                        results.push(item);
+                    }
+                }
+                // 全局查询
+                else if (JSON.stringify(item).toLowerCase().includes(query.toLowerCase())) {
+                    results.push(item);
+                }
+            } catch (err) {
+                console.error(`Error searching data file for ID ${entry.id}:`, err);
+            }
+        }
+        
+        // 更新缓存
+        this.queryCache.set(cacheKey, results);
+        return results;
     }
 
     // 获取原始JSON数据
@@ -269,7 +450,7 @@ export class DataManager {
         items.forEach(item => {
             Object.keys(item).forEach(key => allKeys.add(key));
         });
-        
+
         const keys = Array.from(allKeys);
         let table = keys.join('\t') + '\n';
         
