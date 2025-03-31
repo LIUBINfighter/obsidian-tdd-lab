@@ -1,6 +1,6 @@
 import { h, Component, Fragment } from 'preact';
 import htm from 'htm';
-import { DataManager, DataSchema, SchemaField, FieldType } from '../curd/utils';
+import { DataManager, DataSchema, SchemaField, FieldType } from '../utils.ts/utils';
 import { Notice } from 'obsidian';
 
 const html = htm.bind(h);

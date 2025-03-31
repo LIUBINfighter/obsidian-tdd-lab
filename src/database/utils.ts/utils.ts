@@ -87,16 +87,30 @@ export class DataManager {
 
     // 获取插件数据目录的完整路径
     getPluginDataPath(): string {
+        // 检查dataFolder是否为绝对路径或以./开头的相对路径
+        if (this.settings.dataFolder.startsWith('/') || 
+            this.settings.dataFolder.startsWith('./') ||
+            this.settings.dataFolder.startsWith('../')) {
+            // 这是vault相对路径或绝对路径
+            return this.settings.dataFolder;
+        }
+        
+        // 否则，将其视为插件目录的相对路径
         return `${this.pluginDir}/${this.settings.dataFolder}`;
     }
 
     // 确保数据目录存在
     async ensureDataFolder(): Promise<void> {
+        const folderPath = this.getPluginDataPath();
+        
         try {
-            await this.vault.adapter.mkdir(this.getPluginDataPath());
+            // 递归创建可能不存在的父目录
+            await this.vault.adapter.mkdir(folderPath, { recursive: true });
+            console.log(`Data folder ensured at: ${folderPath}`);
         } catch (err) {
             if (err.message !== 'Folder already exists.') {
                 console.error('Error creating data folder:', err);
+                throw err;
             }
         }
     }
@@ -245,32 +259,162 @@ export class DataManager {
         };
     }
 
+    // 初始化数据库
+    async initializeDatabase(): Promise<void> {
+        console.log("Initializing database...");
+        
+        try {
+            // 1. 确保数据目录存在
+            await this.ensureDataFolder();
+            
+            // 2. 检查索引文件是否存在，不存在则创建
+            const indexPath = this.getIndexFilePath();
+            const indexExists = await this.vault.adapter.exists(indexPath);
+            
+            if (!indexExists) {
+                console.log("Creating new index file at:", indexPath);
+                await this.saveIndex([]);
+            }
+            
+            // 3. 检查Schema文件是否存在，不存在则创建默认Schema
+            const schemaPath = this.getSchemaFilePath();
+            const schemaExists = await this.vault.adapter.exists(schemaPath);
+            
+            if (!schemaExists) {
+                console.log("Creating default schema at:", schemaPath);
+                const defaultSchema: DataSchema = {
+                    name: "默认Schema",
+                    description: "自动创建的默认Schema",
+                    fields: [
+                        {
+                            name: 'id',
+                            type: 'string',
+                            required: true,
+                            description: '数据项唯一标识',
+                            system: true
+                        },
+                        {
+                            name: 'title',
+                            type: 'string',
+                            required: true,
+                            defaultValue: '未命名项目',
+                            description: '数据项标题'
+                        },
+                        {
+                            name: 'content',
+                            type: 'text',
+                            required: false,
+                            description: '数据项内容'
+                        },
+                        {
+                            name: 'createdAt',
+                            type: 'date',
+                            required: true,
+                            description: '创建时间',
+                            system: true
+                        }
+                    ],
+                    indexFields: ['id', 'title'],
+                    version: 1
+                };
+                await this.saveSchema(defaultSchema);
+            }
+            
+            // 4. 如果需要，可以在这里添加数据迁移逻辑
+            
+            console.log("Database initialization complete");
+        } catch (error) {
+            console.error("Error initializing database:", error);
+            throw error;
+        }
+    }
+    
+    // 创建示例数据 - 确保可以被统一调用
+    async createSampleData(): Promise<DataItem> {
+        console.log("Creating sample data...");
+        
+        // 确保数据库已初始化
+        await this.ensureDataFolder();
+        
+        try {
+            // 创建一个示例数据项
+            const newItem: DataItem = {
+                id: this.generateId(),
+                title: `示例数据 ${new Date().toLocaleTimeString()}`,
+                content: '这是一个自动创建的示例数据项',
+                createdAt: new Date().toISOString()
+            };
+            
+            // 使用标准方法保存
+            const savedItem = await this.createData(newItem);
+            console.log("Sample data created successfully:", savedItem);
+            
+            return savedItem;
+        } catch (error) {
+            console.error("Error creating sample data:", error);
+            throw error;
+        }
+    }
+
     // 创建数据 (Create)
     async createData(data: DataItem): Promise<DataItem> {
+        console.log("Creating data:", data);
+        
+        // 确保数据目录存在
+        await this.ensureDataFolder();
+        
         // 验证数据
         const validation = await this.validateData(data);
         if (!validation.valid) {
-            throw new Error(`Data validation failed: ${validation.errors.join(', ')}`);
+            const errorMsg = `Data validation failed: ${validation.errors.join(', ')}`;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
         }
         
         // 确保有ID
         if (!data.id) {
             data.id = this.generateId();
+            console.log("Generated ID for data:", data.id);
         }
         
-        // 保存数据文件
-        const filePath = this.getDataFilePath(data.id);
-        await this.vault.adapter.write(filePath, JSON.stringify(data, null, 2));
-        
-        // 更新索引
-        const index = await this.loadIndex();
-        index.push({
-            id: data.id,
-            filePath: filePath
-        });
-        await this.saveIndex(index);
-        
-        return data;
+        try {
+            // 保存数据文件
+            const filePath = this.getDataFilePath(data.id);
+            console.log("Writing data file to:", filePath);
+            await this.vault.adapter.write(filePath, JSON.stringify(data, null, 2));
+            
+            // 更新索引
+            const indexPath = this.getIndexFilePath();
+            console.log("Updating index file at:", indexPath);
+            
+            let index: IndexEntry[] = [];
+            try {
+                // 尝试读取现有索引
+                index = await this.loadIndex();
+            } catch (error) {
+                console.warn("Could not load existing index, creating new:", error);
+            }
+            
+            // 添加新条目或更新现有条目
+            const existingEntryIndex = index.findIndex(entry => entry.id === data.id);
+            if (existingEntryIndex >= 0) {
+                index[existingEntryIndex].filePath = filePath;
+            } else {
+                index.push({
+                    id: data.id,
+                    filePath: filePath
+                });
+            }
+            
+            // 保存更新后的索引
+            await this.saveIndex(index);
+            console.log("Index updated successfully");
+            
+            return data;
+        } catch (error) {
+            console.error("Error creating data:", error);
+            throw error;
+        }
     }
 
     // 读取数据 (Read)
@@ -291,19 +435,47 @@ export class DataManager {
 
     // 读取所有数据
     async readAllData(): Promise<DataItem[]> {
-        const index = await this.loadIndex();
-        const allData: DataItem[] = [];
+        console.log("Reading all data...");
         
-        for (const entry of index) {
+        try {
+            // 读取索引
+            const indexPath = this.getIndexFilePath();
+            console.log("Loading index from:", indexPath);
+            
+            let index: IndexEntry[] = [];
             try {
-                const content = await this.vault.adapter.read(entry.filePath);
-                allData.push(JSON.parse(content));
-            } catch (err) {
-                console.error(`Error reading data file for ID ${entry.id}:`, err);
+                index = await this.loadIndex();
+            } catch (error) {
+                console.warn("Error loading index:", error);
+                return [];
             }
+            
+            console.log(`Found ${index.length} items in index`);
+            
+            if (index.length === 0) {
+                console.log("No data found in index");
+                return [];
+            }
+            
+            const allData: DataItem[] = [];
+            
+            // 读取每个数据文件
+            for (const entry of index) {
+                try {
+                    console.log(`Reading data file: ${entry.filePath} for ID: ${entry.id}`);
+                    const content = await this.vault.adapter.read(entry.filePath);
+                    allData.push(JSON.parse(content));
+                } catch (err) {
+                    console.error(`Error reading data file for ID ${entry.id}:`, err);
+                }
+            }
+            
+            console.log(`Successfully read ${allData.length} data items`);
+            return allData;
+        } catch (error) {
+            console.error("Error reading all data:", error);
+            return [];
         }
-        
-        return allData;
     }
 
     // 更新数据 (Update)

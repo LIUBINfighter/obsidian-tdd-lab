@@ -4,7 +4,7 @@ import htm from 'htm';
 import { Readme } from './Componets/Readme';
 import { Debug } from './Componets/Debug';
 import { Schema } from './Componets/Schema';
-import { DataManager, DEFAULT_DB_SETTINGS } from './curd/utils';
+import { DataManager, DEFAULT_DB_SETTINGS } from './utils.ts/utils';
 
 const html = htm.bind(h);
 
@@ -45,19 +45,28 @@ export class DatabaseView extends ItemView {
         const container = this.containerEl.children[1];
         container.empty();
         
-        // 尝试从插件实例获取dataManager，如果失败则使用本地创建的实例
+        // 修改为始终尝试获取插件的全局数据管理器
         try {
             const plugin = this.app.plugins.getPlugin('obsidian-tdd-lab');
             if (plugin && 'dataManager' in plugin) {
                 this.dataManager = (plugin as any).dataManager;
+                console.log('Using plugin global dataManager');
             } else {
-                // 确保本地实例的数据文件夹存在
-                await this.dataManager.ensureDataFolder();
+                // 如果无法获取，使用与main.ts相同的配置初始化
+                console.log('Plugin dataManager not found, creating local instance');
+                const pluginDir = this.app.plugins.manifests['obsidian-tdd-lab']?.dir || '';
+                // 获取插件的配置以确保路径一致
+                const settings = await this.app.loadData('obsidian-tdd-lab') || {};
+                const dbSettings = settings.database || DEFAULT_DB_SETTINGS;
+                this.dataManager = new DataManager(this.app, pluginDir, dbSettings);
+                await this.dataManager.initializeDatabase();
             }
         } catch (error) {
-            console.log('Failed to get plugin dataManager, using local instance', error);
-            // 确保本地实例的数据文件夹存在
-            await this.dataManager.ensureDataFolder();
+            console.error('Failed to initialize dataManager:', error);
+            // 确保本地实例使用与main.ts相同的配置
+            const pluginDir = this.app.plugins.manifests['obsidian-tdd-lab']?.dir || '';
+            this.dataManager = new DataManager(this.app, pluginDir, DEFAULT_DB_SETTINGS);
+            await this.dataManager.initializeDatabase();
         }
         
         // 创建视图结构 - 只创建一次

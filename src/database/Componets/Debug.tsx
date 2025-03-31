@@ -1,6 +1,6 @@
 import { h, Component, Fragment } from 'preact';
 import htm from 'htm';
-import { DataManager, DataItem, DebugInfo } from '../curd/utils';
+import { DataManager, DataItem, DebugInfo } from '../utils.ts/utils';
 import { Notice } from 'obsidian';
 
 const html = htm.bind(h);

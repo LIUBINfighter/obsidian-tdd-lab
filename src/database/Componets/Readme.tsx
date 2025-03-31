@@ -1,6 +1,6 @@
 import { h, Component } from 'preact';
 import htm from 'htm';
-import { DataManager, DataItem } from '../curd/utils';
+import { DataManager, DataItem } from '../utils.ts/utils';
 import { DataOperations } from './DataOperations';
 import { DataList } from './DataList';
 

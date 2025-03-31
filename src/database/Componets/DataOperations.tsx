@@ -1,6 +1,6 @@
 import { h, Component } from 'preact';
 import htm from 'htm';
-import { DataManager, DataItem, DataSchema } from '../curd/utils';
+import { DataManager, DataItem, DataSchema } from '../utils.ts/utils';
 import { Notice } from 'obsidian';
 
 const html = htm.bind(h);
@@ -130,17 +130,16 @@ export class DataOperations extends Component<DataOperationsProps, DataOperation
         }
     }
 
-    // 创建示例数据项
+    // 创建示例数据项 - 使用统一的方法
     async createSampleItem() {
-        const newItem = await this.props.dataManager.createData({
-            id: this.props.dataManager.generateId(),
-            title: 'Sample Item ' + new Date().toLocaleTimeString(),
-            content: 'This is a sample data item',
-            createdAt: new Date().toISOString()
-        });
-        
-        new Notice(`Created new item: ${newItem.title}`);
-        this.props.onDataChanged();
+        try {
+            const newItem = await this.props.dataManager.createSampleData();
+            new Notice(`已创建示例数据: ${newItem.title}`);
+            this.props.onDataChanged();
+        } catch (error) {
+            console.error("Error creating sample data:", error);
+            new Notice("创建示例数据失败");
+        }
     }
     
     // 切换显示Schema信息
