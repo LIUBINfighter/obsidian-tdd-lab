@@ -21,8 +21,16 @@ export class DatabaseView extends ItemView {
 
     constructor(leaf: WorkspaceLeaf) {
         super(leaf);
-        // 创建一个新的DataManager实例以防主插件实例无法访问
-        this.dataManager = new DataManager(this.app, DEFAULT_DB_SETTINGS);
+        
+        // 尝试获取插件实例
+        const plugin = this.app.plugins.getPlugin('obsidian-tdd-lab') as any;
+        if (plugin && plugin.manifest && plugin.manifest.dir) {
+            // 创建一个新的DataManager实例，使用插件目录
+            this.dataManager = new DataManager(this.app, plugin.manifest.dir, DEFAULT_DB_SETTINGS);
+        } else {
+            // 如果无法获取插件目录，使用默认设置
+            this.dataManager = new DataManager(this.app, '', DEFAULT_DB_SETTINGS);
+        }
     }
 
     getViewType(): string {
@@ -42,6 +50,9 @@ export class DatabaseView extends ItemView {
             const plugin = this.app.plugins.getPlugin('obsidian-tdd-lab');
             if (plugin && 'dataManager' in plugin) {
                 this.dataManager = (plugin as any).dataManager;
+            } else {
+                // 确保本地实例的数据文件夹存在
+                await this.dataManager.ensureDataFolder();
             }
         } catch (error) {
             console.log('Failed to get plugin dataManager, using local instance', error);
@@ -102,6 +113,11 @@ export class DatabaseView extends ItemView {
         this.renderActiveTabContent();
     }
     
+    // 添加公共方法来切换标签页
+    public switchToTab(tab: 'readme' | 'debug' | 'schema') {
+        this.setActiveTab(tab);
+    }
+    
     // 渲染当前活动选项卡的内容
     private renderActiveTabContent() {
         // 清空内容容器，准备渲染新内容
@@ -109,7 +125,12 @@ export class DatabaseView extends ItemView {
         
         // 根据活动选项卡渲染对应内容
         if (this.activeTab === 'readme') {
-            render(html`<${Readme} dataManager=${this.dataManager} />`, this.contentContainer);
+            render(html`
+                <${Readme} 
+                    dataManager=${this.dataManager}
+                    onSwitchTab=${(tab: string) => this.switchToTab(tab as 'readme' | 'debug' | 'schema')}
+                />
+            `, this.contentContainer);
         } else if (this.activeTab === 'debug') {
             render(html`<${Debug} dataManager=${this.dataManager} />`, this.contentContainer);
         } else if (this.activeTab === 'schema') {

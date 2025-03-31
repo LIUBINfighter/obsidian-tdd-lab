@@ -8,6 +8,7 @@ const html = htm.bind(h);
 
 interface ReadmeProps {
     dataManager: DataManager;
+    onSwitchTab?: (tab: string) => void; // 添加属性接收切换标签页的回调
 }
 
 interface ReadmeState {
@@ -48,6 +49,7 @@ export class Readme extends Component<ReadmeProps, ReadmeState> {
                     <${DataOperations} 
                         dataManager=${this.props.dataManager}
                         onDataChanged=${() => this.loadData()}
+                        onSwitchTab=${this.props.onSwitchTab} // 传递切换标签页的回调
                     />
                 </div>
 

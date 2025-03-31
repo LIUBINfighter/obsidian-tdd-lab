@@ -8,12 +8,14 @@ const html = htm.bind(h);
 interface DataOperationsProps {
     dataManager: DataManager;
     onDataChanged: () => void;
+    onSwitchTab?: (tab: string) => void; // 新增：用于切换到Schema标签页
 }
 
 interface DataOperationsState {
     schema: DataSchema | null;
     isLoading: boolean;
     customFields: {[key: string]: any};
+    showSchemaInfo: boolean; // 新增：控制是否显示Schema信息
 }
 
 export class DataOperations extends Component<DataOperationsProps, DataOperationsState> {
@@ -22,7 +24,8 @@ export class DataOperations extends Component<DataOperationsProps, DataOperation
         this.state = {
             schema: null,
             isLoading: true,
-            customFields: {}
+            customFields: {},
+            showSchemaInfo: false
         };
     }
 
@@ -140,6 +143,75 @@ export class DataOperations extends Component<DataOperationsProps, DataOperation
         this.props.onDataChanged();
     }
     
+    // 切换显示Schema信息
+    toggleSchemaInfo() {
+        this.setState(prevState => ({
+            showSchemaInfo: !prevState.showSchemaInfo
+        }));
+    }
+
+    // 跳转到Schema标签页
+    goToSchemaTab() {
+        if (this.props.onSwitchTab) {
+            this.props.onSwitchTab('schema');
+        }
+    }
+
+    // 渲染Schema信息
+    renderSchemaInfo() {
+        const { schema, showSchemaInfo } = this.state;
+        
+        if (!schema || !showSchemaInfo) return null;
+        
+        return html`
+            <div class="schema-info-panel">
+                <h4>当前Schema: ${schema.name} <span class="schema-version">v${schema.version}</span></h4>
+                <p class="schema-description">${schema.description || '无描述'}</p>
+                
+                <h5>字段列表</h5>
+                <table class="schema-fields-table">
+                    <thead>
+                        <tr>
+                            <th>字段名</th>
+                            <th>类型</th>
+                            <th>必需</th>
+                            <th>默认值</th>
+                            <th>描述</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${schema.fields.map(field => html`
+                            <tr key=${field.name} class=${field.system ? 'system-field' : ''}>
+                                <td>${field.name} ${field.system ? html`<span class="system-badge">系统</span>` : ''}</td>
+                                <td>${field.type}</td>
+                                <td>${field.required ? '✓' : '✗'}</td>
+                                <td>${field.defaultValue !== undefined ? String(field.defaultValue) : '-'}</td>
+                                <td>${field.description || '-'}</td>
+                            </tr>
+                        `)}
+                    </tbody>
+                </table>
+                
+                <h5>索引字段</h5>
+                <div class="index-fields">
+                    ${schema.indexFields.length > 0 
+                        ? schema.indexFields.map(field => html`<span class="index-field-badge">${field}</span>`)
+                        : '无索引字段'
+                    }
+                </div>
+                
+                <div class="schema-actions">
+                    <button 
+                        class="edit-schema-btn" 
+                        onClick=${() => this.goToSchemaTab()}
+                    >
+                        编辑Schema
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
     // 渲染字段输入框
     renderFieldInput(fieldName: string, fieldType: string, value: any, required: boolean) {
         switch (fieldType) {
@@ -195,7 +267,7 @@ export class DataOperations extends Component<DataOperationsProps, DataOperation
     }
     
     render() {
-        const { schema, isLoading, customFields } = this.state;
+        const { schema, isLoading, customFields, showSchemaInfo } = this.state;
         
         if (isLoading) {
             return html`<div>加载Schema中...</div>`;
@@ -209,7 +281,19 @@ export class DataOperations extends Component<DataOperationsProps, DataOperation
             
             return html`
                 <div class="data-operations">
-                    <h4>使用Schema创建数据</h4>
+                    <div class="schema-header">
+                        <h4>使用Schema创建数据</h4>
+                        <button 
+                            class="toggle-schema-info-btn" 
+                            onClick=${() => this.toggleSchemaInfo()}
+                            title="${showSchemaInfo ? '隐藏Schema详情' : '显示Schema详情'}"
+                        >
+                            ${showSchemaInfo ? '隐藏Schema' : '查看Schema'}
+                        </button>
+                    </div>
+                    
+                    ${this.renderSchemaInfo()}
+                    
                     <div class="schema-form">
                         ${userEditableFields.map(field => html`
                             <div class="form-field" key=${field.name}>
@@ -250,11 +334,18 @@ export class DataOperations extends Component<DataOperationsProps, DataOperation
             `;
         }
         
-        // 如果没有Schema，显示简单的创建按钮
+        // 如果没有Schema，显示简单的创建按钮和引导信息
         return html`
             <div class="data-operations">
                 <div class="no-schema-message">
-                    没有发现Schema定义。您可以在"数据模式"选项卡中创建一个Schema。
+                    没有发现Schema定义。您可以
+                    <button 
+                        class="go-to-schema-btn" 
+                        onClick=${() => this.goToSchemaTab()}
+                    >
+                        点击这里
+                    </button>
+                    前往"数据模式"标签页创建一个Schema。
                 </div>
                 <button 
                     class="create-sample-btn" 

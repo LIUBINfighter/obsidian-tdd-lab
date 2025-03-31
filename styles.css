@@ -334,7 +334,7 @@ If your plugin does not need CSS, delete this file.
 
 .save-schema-btn {
     background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
+    color: var (--text-on-accent);
 }
 
 .schema-content {
@@ -601,4 +601,88 @@ If your plugin does not need CSS, delete this file.
     color: var(--text-error);
     border-radius: 4px;
     opacity: 0.8;
+}
+
+/* Schema信息显示样式 */
+.schema-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.toggle-schema-info-btn {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.schema-info-panel {
+    background-color: var(--background-secondary-alt);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 5px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    max-height: 400px;
+    overflow: auto;
+}
+
+.schema-fields-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 0.9em;
+}
+
+.schema-fields-table th,
+.schema-fields-table td {
+    border: 1px solid var(--background-modifier-border);
+    padding: 6px 10px;
+    text-align: left;
+}
+
+.schema-fields-table th {
+    background-color: var(--background-secondary);
+}
+
+.schema-fields-table tr.system-field {
+    background-color: var(--background-primary-alt);
+}
+
+.index-field-badge {
+    display: inline-block;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-size: 0.8em;
+    padding: 2px 6px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    border-radius: 3px;
+}
+
+.edit-schema-btn {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.go-to-schema-btn {
+    background: none;
+    border: none;
+    color: var(--text-accent);
+    padding: 0;
+    font-size: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.go-to-schema-btn:hover {
+    text-decoration: none;
 }
