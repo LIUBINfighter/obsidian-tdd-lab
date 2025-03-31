@@ -269,3 +269,336 @@ If your plugin does not need CSS, delete this file.
 .folder-icon {
     color: var(--text-accent);
 }
+
+/* Schema组件样式 */
+.schema-container {
+    padding: 10px;
+    height: 100%;
+    overflow: auto;
+}
+
+.schema-editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.schema-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.schema-title-section {
+    flex: 1;
+}
+
+.schema-meta {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.schema-version {
+    margin-left: 10px;
+    font-size: 0.9em;
+    color: var(--text-muted);
+}
+
+.schema-name-input {
+    font-size: 1.2em;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.schema-description {
+    width: 100%;
+    min-height: 60px;
+    resize: vertical;
+}
+
+.schema-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.toggle-preview-btn,
+.save-schema-btn,
+.apply-schema-btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.save-schema-btn {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.schema-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.schema-fields {
+    flex: 2;
+    min-width: 300px;
+}
+
+.add-field-form {
+    flex: 1;
+    min-width: 250px;
+    background-color: var(--background-secondary);
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.schema-field-list {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.field-header {
+    display: flex;
+    background-color: var(--background-secondary-alt);
+    font-weight: bold;
+    padding: 8px;
+}
+
+.field-row {
+    display: flex;
+    border-top: 1px solid var(--background-modifier-border);
+    padding: 8px;
+    align-items: center;
+}
+
+.field-row.editing {
+    background-color: var(--background-secondary-alt);
+    flex-wrap: wrap;
+}
+
+.field-name {
+    flex: 2;
+}
+
+.field-type {
+    flex: 1;
+}
+
+.field-required, .field-index {
+    flex: 0.5;
+    text-align: center;
+}
+
+.field-actions {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+.field-details {
+    width: 100%;
+    padding: 8px;
+    background-color: var(--background-primary-alt);
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.field-detail-row {
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.detail-label {
+    width: 80px;
+}
+
+.detail-input {
+    flex: 1;
+}
+
+.system-badge {
+    font-size: 0.7em;
+    background-color: var(--text-accent);
+    color: white;
+    padding: 1px 4px;
+    border-radius: 3px;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.system-field {
+    background-color: var(--background-primary-alt);
+}
+
+.field-form-row {
+    display: flex;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.form-label {
+    width: 80px;
+}
+
+.form-input {
+    flex: 1;
+}
+
+.field-form-actions {
+    margin-top: 15px;
+    text-align: right;
+}
+
+.add-field-btn {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.schema-preview {
+    width: 100%;
+}
+
+.json-editor-container {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.json-editor {
+    width: 100%;
+    height: 300px;
+    font-family: monospace;
+    resize: vertical;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.json-editor-container.has-error .json-editor {
+    border-color: var(--text-error);
+}
+
+.json-error {
+    color: var(--text-error);
+    margin-bottom: 10px;
+}
+
+.preview-actions {
+    text-align: right;
+}
+
+.parse-json-btn {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.no-fields {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* DataOperations 组件样式 */
+.data-operations {
+    margin-bottom: 20px;
+}
+
+.schema-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+    background-color: var(--background-primary);
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.field-label {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.required-marker {
+    color: var(--text-error);
+    margin-left: 3px;
+}
+
+.field-input input[type="text"],
+.field-input input[type="number"],
+.field-input input[type="date"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background-color: var(--background-primary);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.field-description {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin-top: 3px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.create-btn {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.create-sample-btn {
+    background-color: var(--interactive-normal);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.create-btn:hover, .create-sample-btn:hover {
+    opacity: 0.9;
+}
+
+.no-schema-message {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: var(--background-modifier-error-rgb);
+    color: var(--text-error);
+    border-radius: 4px;
+    opacity: 0.8;
+}

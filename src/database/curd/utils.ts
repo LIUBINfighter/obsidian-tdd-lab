@@ -110,9 +110,8 @@ export class DataManager {
     }
 
     // 获取Schema文件路径
-    getSchemaFilePath(): string | null {
-        if (!this.settings.schemaFile) return null;
-        return `${this.settings.dataFolder}/${this.settings.schemaFile}`;
+    getSchemaFilePath(): string {
+        return `${this.settings.dataFolder}/${this.settings.schemaFile || 'data-schema.json'}`;
     }
 
     // 加载索引
@@ -135,15 +134,22 @@ export class DataManager {
     }
 
     // Schema相关方法
+    async getSchema(): Promise<DataSchema | null> {
+        return this.loadSchema();
+    }
+
+    // 加载Schema
     async loadSchema(): Promise<DataSchema | null> {
         const schemaPath = this.getSchemaFilePath();
-        if (!schemaPath) return null;
         
         try {
+            const exists = await this.vault.adapter.exists(schemaPath);
+            if (!exists) return null;
+            
             const content = await this.vault.adapter.read(schemaPath);
             return JSON.parse(content);
-        } catch (err) {
-            console.error("Error loading schema:", err);
+        } catch (error) {
+            console.error("Error loading schema:", error);
             return null;
         }
     }

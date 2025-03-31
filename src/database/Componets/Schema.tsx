@@ -62,6 +62,7 @@ export class Schema extends Component<SchemaProps, SchemaState> {
         this.setState({ loading: true });
         
         try {
+            // 使用loadSchema()方法，确保与utils.ts一致
             const schema = await this.props.dataManager.loadSchema();
             
             if (schema) {
