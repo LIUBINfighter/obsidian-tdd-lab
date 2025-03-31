@@ -34,6 +34,8 @@ export default class TddLab extends Plugin {
         // 根据设置确定实际数据目录路径
         const dataPath = this.getDataFolderPath();
         console.log("Data folder path resolved to:", dataPath);
+        console.log("Using data location:", this.settings.dataLocation);
+        console.log("Plugin directory:", pluginDir);
         
         // 初始化数据管理器
         this.dataManager = new DataManager(this.app, pluginDir, {
@@ -47,6 +49,12 @@ export default class TddLab extends Plugin {
             console.log("Database initialized successfully");
             // 添加一个调试日志，显示实际使用的数据目录
             console.log("Using data folder:", this.dataManager.getPluginDataPath());
+            console.log("Database initialized with settings:", {
+                actualPath: this.dataManager.getPluginDataPath(),
+                configuredPath: dataPath,
+                pluginDir: pluginDir,
+                dataLocation: this.settings.dataLocation
+            });
         } catch (error) {
             console.error("Failed to initialize database:", error);
             new Notice("数据库初始化失败，请检查控制台获取详细信息");

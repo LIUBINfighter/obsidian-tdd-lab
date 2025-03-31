@@ -45,27 +45,62 @@ export class DatabaseView extends ItemView {
         const container = this.containerEl.children[1];
         container.empty();
         
-        // 修改为始终尝试获取插件的全局数据管理器
+        // 修改为始终尝试获取插件的全局数据管理器，并确保路径一致
         try {
             const plugin = this.app.plugins.getPlugin('obsidian-tdd-lab');
             if (plugin && 'dataManager' in plugin) {
+                // 使用插件的全局DataManager实例
                 this.dataManager = (plugin as any).dataManager;
                 console.log('Using plugin global dataManager');
+                console.log('Data path:', this.dataManager.getPluginDataPath());
             } else {
-                // 如果无法获取，使用与main.ts相同的配置初始化
+                // 如果无法获取，创建本地实例并确保使用相同的路径逻辑
                 console.log('Plugin dataManager not found, creating local instance');
                 const pluginDir = this.app.plugins.manifests['obsidian-tdd-lab']?.dir || '';
-                // 获取插件的配置以确保路径一致
-                const settings = await this.app.loadData('obsidian-tdd-lab') || {};
-                const dbSettings = settings.database || DEFAULT_DB_SETTINGS;
-                this.dataManager = new DataManager(this.app, pluginDir, dbSettings);
+                
+                // 获取插件设置 - 使用插件的settings而不是loadData
+                let dbSettings = DEFAULT_DB_SETTINGS;
+                let dataLocation = 'plugin-dir';
+                
+                if (plugin && 'settings' in plugin) {
+                    const settings = (plugin as any).settings;
+                    dbSettings = settings.database || DEFAULT_DB_SETTINGS;
+                    dataLocation = settings.dataLocation || 'plugin-dir';
+                }
+                
+                const dataPath = this.getDataFolderPath(dataLocation, dbSettings.dataFolder);
+                
+                console.log('Resolved data path:', dataPath);
+                
+                // 使用解析后的路径创建DataManager
+                this.dataManager = new DataManager(this.app, pluginDir, {
+                    ...dbSettings,
+                    dataFolder: dataPath
+                });
+                
                 await this.dataManager.initializeDatabase();
             }
         } catch (error) {
             console.error('Failed to initialize dataManager:', error);
-            // 确保本地实例使用与main.ts相同的配置
+            
+            // 出错时也要确保使用正确的路径
             const pluginDir = this.app.plugins.manifests['obsidian-tdd-lab']?.dir || '';
-            this.dataManager = new DataManager(this.app, pluginDir, DEFAULT_DB_SETTINGS);
+            const plugin = this.app.plugins.getPlugin('obsidian-tdd-lab');
+            
+            let dataPath = DEFAULT_DB_SETTINGS.dataFolder;
+            
+            // 尝试从插件实例获取设置
+            if (plugin && 'settings' in plugin) {
+                const settings = (plugin as any).settings;
+                const dataLocation = settings.dataLocation || 'plugin-dir';
+                dataPath = this.getDataFolderPath(dataLocation, DEFAULT_DB_SETTINGS.dataFolder);
+            }
+            
+            this.dataManager = new DataManager(this.app, pluginDir, {
+                ...DEFAULT_DB_SETTINGS,
+                dataFolder: dataPath
+            });
+            
             await this.dataManager.initializeDatabase();
         }
         
@@ -144,6 +179,22 @@ export class DatabaseView extends ItemView {
             render(html`<${Debug} dataManager=${this.dataManager} />`, this.contentContainer);
         } else if (this.activeTab === 'schema') {
             render(html`<${Schema} dataManager=${this.dataManager} />`, this.contentContainer);
+        }
+    }
+
+    // 复制main.ts中的路径解析方法，确保路径一致性
+    private getDataFolderPath(dataLocation: string, baseFolderName: string): string {
+        switch(dataLocation) {
+            case 'vault-root':
+                // 使用vault根目录
+                return baseFolderName;
+            case 'obsidian-dir':
+                // 使用 .obsidian 目录
+                return `.obsidian/${baseFolderName}`;
+            case 'plugin-dir':
+            default:
+                // 使用插件目录 (相对路径将被DataManager处理)
+                return baseFolderName;
         }
     }
 
