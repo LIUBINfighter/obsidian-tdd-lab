@@ -686,3 +686,92 @@ If your plugin does not need CSS, delete this file.
 .go-to-schema-btn:hover {
     text-decoration: none;
 }
+
+/* DataList 组件增强样式 */
+.data-list-container {
+    margin-top: 15px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.data-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--background-secondary);
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.list-stats {
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.refresh-list-btn {
+    font-size: 0.85em;
+    padding: 4px 8px;
+    background-color: var(--interactive-normal);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.data-table th, .data-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    text-align: left;
+}
+
+.data-table th {
+    background-color: var(--background-secondary-alt);
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+.data-table th:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.data-table th.sorted-asc .sort-indicator:after {
+    content: "▲";
+    position: absolute;
+    right: 8px;
+    font-size: 10px;
+}
+
+.data-table th.sorted-desc .sort-indicator:after {
+    content: "▼";
+    position: absolute;
+    right: 8px;
+    font-size: 10px;
+}
+
+.data-table tr:hover {
+    background-color: var(--background-primary-alt);
+}
+
+.data-table .actions-column {
+    width: 80px;
+    text-align: center;
+}
+
+.data-table .actions-cell {
+    text-align: center;
+}
+
+.empty-data-container, .loading-container {
+    padding: 20px;
+    text-align: center;
+    background-color: var(--background-primary);
+    border-radius: 5px;
+    color: var(--text-muted);
+}

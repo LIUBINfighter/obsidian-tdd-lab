@@ -54,7 +54,7 @@ export interface DataSchema {
 }
 
 export const DEFAULT_DB_SETTINGS: DatabaseSettings = {
-    dataFolder: 'tdd-lab-data',
+    dataFolder: '.data', // 改为 .data 作为插件目录内的隐藏文件夹
     indexFile: 'data-index.json',
     schemaFile: 'data-schema.json'
 }
@@ -63,13 +63,15 @@ export class DataManager {
     app: App;
     vault: Vault;
     settings: DatabaseSettings;
+    pluginDir: string;
 
     private cacheCleanupInterval: number;
 
-    constructor(app: App, settings?: Partial<DatabaseSettings>) {
+    constructor(app: App, pluginDir: string, settings?: Partial<DatabaseSettings>) {
         this.app = app;
         this.vault = app.vault;
         this.settings = { ...DEFAULT_DB_SETTINGS, ...settings };
+        this.pluginDir = pluginDir;
         
         // 每5分钟清理一次缓存
         this.cacheCleanupInterval = window.setInterval(() => {
@@ -83,10 +85,15 @@ export class DataManager {
         console.log('Query cache cleared');
     }
 
+    // 获取插件数据目录的完整路径
+    getPluginDataPath(): string {
+        return `${this.pluginDir}/${this.settings.dataFolder}`;
+    }
+
     // 确保数据目录存在
     async ensureDataFolder(): Promise<void> {
         try {
-            await this.vault.createFolder(this.settings.dataFolder);
+            await this.vault.adapter.mkdir(this.getPluginDataPath());
         } catch (err) {
             if (err.message !== 'Folder already exists.') {
                 console.error('Error creating data folder:', err);
@@ -101,17 +108,17 @@ export class DataManager {
 
     // 获取索引文件路径
     getIndexFilePath(): string {
-        return `${this.settings.dataFolder}/${this.settings.indexFile}`;
+        return `${this.getPluginDataPath()}/${this.settings.indexFile}`;
     }
 
     // 获取数据文件路径
     getDataFilePath(id: string): string {
-        return `${this.settings.dataFolder}/${id}.json`;
+        return `${this.getPluginDataPath()}/${id}.json`;
     }
 
     // 获取Schema文件路径
     getSchemaFilePath(): string {
-        return `${this.settings.dataFolder}/${this.settings.schemaFile || 'data-schema.json'}`;
+        return `${this.getPluginDataPath()}/${this.settings.schemaFile || 'data-schema.json'}`;
     }
 
     // 加载索引
@@ -505,13 +512,14 @@ export class DataManager {
     async openDataFolderInExplorer(): Promise<void> {
         try {
             // 检查文件夹是否存在
-            const folderExists = await this.vault.adapter.exists(this.settings.dataFolder);
+            const folderPath = this.getPluginDataPath();
+            const folderExists = await this.vault.adapter.exists(folderPath);
             if (!folderExists) {
-                await this.vault.createFolder(this.settings.dataFolder);
+                await this.vault.adapter.mkdir(folderPath);
             }
             
             // 在系统默认应用中打开
-            await (this.app as any).openWithDefaultApp(this.settings.dataFolder);
+            await (this.app as any).openWithDefaultApp(folderPath);
         } catch (error) {
             console.error("Error opening data folder in explorer:", error);
             throw error;

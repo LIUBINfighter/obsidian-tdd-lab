@@ -1,5 +1,6 @@
 import { App, Plugin, PluginSettingTab, Setting, Notice } from 'obsidian';
 import { DatabaseView, DATABASE_VIEW_TYPE } from './database/database-view';
+import { JSONView, JSON_VIEW_TYPE } from './database/json-view';
 import { DataManager, DatabaseSettings } from './database/curd/utils';
 
 // 明确定义插件ID，确保与manifest.json一致
@@ -25,9 +26,10 @@ export default class TddLab extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		
-		// 初始化数据管理器
-		this.dataManager = new DataManager(this.app, this.settings.database);
-		await this.dataManager.ensureDataFolder();
+		 // 获取插件目录路径并初始化数据管理器
+        const pluginDir = this.manifest.dir || '';
+        this.dataManager = new DataManager(this.app, pluginDir, this.settings.database);
+        await this.dataManager.ensureDataFolder();
 
 		// 注册数据库视图
 		this.registerView(
