@@ -1,19 +1,33 @@
-import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice } from 'obsidian';
 import { DatabaseView, DATABASE_VIEW_TYPE } from './database/database-view';
+import { DataManager, DatabaseSettings } from './database/curd/utils';
+
+// 明确定义插件ID，确保与manifest.json一致
+export const PLUGIN_ID = 'obsidian-tdd-lab';
 
 interface TddLabSettings {
 	mySetting: string;
+	database: DatabaseSettings;
 }
 
 const DEFAULT_SETTINGS: TddLabSettings = {
-	mySetting: 'default'
+	mySetting: 'default',
+	database: {
+		dataFolder: 'tdd-lab-data',
+		indexFile: 'data-index.json'
+	}
 }
 
 export default class TddLab extends Plugin {
 	settings: TddLabSettings;
+	dataManager: DataManager;
 
 	async onload() {
 		await this.loadSettings();
+		
+		// 初始化数据管理器
+		this.dataManager = new DataManager(this.app, this.settings.database);
+		await this.dataManager.ensureDataFolder();
 
 		// 注册数据库视图
 		this.registerView(
@@ -24,6 +38,21 @@ export default class TddLab extends Plugin {
 		// 添加打开数据库视图的功能按钮
 		this.addRibbonIcon('database', 'Open TDD Lab Database', (evt: MouseEvent) => {
 			this.activateView();
+		});
+
+		// 添加示例数据创建命令
+		this.addCommand({
+			id: 'create-sample-data',
+			name: 'Create sample data',
+			callback: async () => {
+				const newItem = await this.dataManager.createData({
+					id: this.dataManager.generateId(),
+					title: 'Sample Item',
+					content: 'This is a sample data item',
+					createdAt: new Date().toISOString()
+				});
+				new Notice(`Created new item with ID: ${newItem.id}`);
+			}
 		});
 
 		// 添加设置选项卡
@@ -80,6 +109,17 @@ class TddSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.mySetting)
 				.onChange(async (value) => {
 					this.plugin.settings.mySetting = value;
+					await this.plugin.saveSettings();
+					}));
+		
+		new Setting(containerEl)
+			.setName('Data Folder')
+			.setDesc('Folder path for storing TDD Lab data')
+			.addText(text => text
+				.setPlaceholder('Enter folder path')
+				.setValue(this.plugin.settings.database.dataFolder)
+				.onChange(async (value) => {
+					this.plugin.settings.database.dataFolder = value;
 					await this.plugin.saveSettings();
 				}));
 	}

@@ -6,3 +6,234 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+/* TDD Lab Plugin 样式 */
+
+/* 通用样式 */
+.tdd-tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--background-modifier-border);
+    margin-bottom: 10px;
+}
+
+.tdd-tab {
+    padding: 8px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.tdd-tab:hover {
+    background-color: var(--background-secondary-alt);
+}
+
+.tdd-tab.active {
+    border-bottom: 2px solid var(--interactive-accent);
+    font-weight: bold;
+}
+
+.tdd-content-container {
+    padding: 10px;
+    height: calc(100% - 50px);
+    overflow: auto;
+}
+
+/* Readme 组件样式 */
+.readme-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.readme-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: var(--background-secondary);
+    border-radius: 5px;
+}
+
+.data-list {
+    list-style: none;
+    padding: 0;
+}
+
+.data-item {
+    border: 1px solid var(--background-modifier-border);
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: var(--background-primary);
+}
+
+.data-item-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.delete-btn {
+    color: var(--text-error);
+    border-color: var(--text-error);
+}
+
+/* Debug 组件样式 */
+.debug-container {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+}
+
+.debug-sidebar {
+    width: 30%;
+    min-width: 200px;
+    border-right: 1px solid var(--background-modifier-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.debug-content {
+    flex: 1;
+    padding: 0 15px;
+    overflow: auto;
+}
+
+.toolbar {
+    display: flex;
+    padding: 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.toolbar input {
+    flex: 1;
+    margin-right: 8px;
+}
+
+.refresh-btn {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.debug-info {
+    padding: 10px;
+    font-size: 0.85em;
+    background-color: var(--background-secondary);
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-label {
+    font-size: 0.8em;
+    color: var(--text-muted);
+}
+
+.item-list-container {
+    flex: 1;
+    overflow: auto;
+}
+
+.debug-item-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.debug-item-list li {
+    padding: 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    cursor: pointer;
+}
+
+.debug-item-list li:hover {
+    background-color: var(--background-secondary-alt);
+}
+
+.debug-item-list li.selected {
+    background-color: var(--background-modifier-hover);
+}
+
+.item-title {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-subtitle {
+    font-size: 0.8em;
+    color: var(--text-muted);
+}
+
+.debug-panel {
+    height: 100%;
+    overflow: auto;
+}
+
+.panel-section {
+    margin-bottom: 20px;
+}
+
+.data-details {
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.key-value-row {
+    display: flex;
+    padding: 4px 0;
+}
+
+.key-label {
+    color: var(--text-accent);
+    min-width: 150px;
+    font-weight: 500;
+}
+
+.object-value {
+    margin-left: 20px;
+}
+
+.primitive-value {
+    color: var(--text-normal);
+}
+
+.raw-json {
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 10px;
+    overflow: auto;
+    font-family: monospace;
+    white-space: pre-wrap;
+    max-height: 300px;
+}
+
+.select-prompt {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.empty-list, .loading {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
